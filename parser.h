@@ -1,15 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "moth.h"
-
+#include "lib.h"
 #include <string>
 #include <sstream>
-#include <vector>
-#include <cinttypes>
-
-using line_num_t = size_t;
-using param_t = size_t;
 
 enum class Task : size_t {
     TEXT = 1,
