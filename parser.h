@@ -24,17 +24,17 @@ enum class Task : size_t {
 class Parser;
 
 struct ParsedInput {
-
     friend class Parser;
 
     line_num_t _line_num;
     std::vector<param_t> _params; 
     Task _task;
     private:
+        inline static const size_t PARAMETRES = 4;
         ParsedInput() = default;
         ParsedInput(Task t)
           : _task(t),
-            _params(std::vector<param_t>(5, 0)) {}
+            _params(std::vector<param_t>(PARAMETRES, 0)) {}
 };
 
 class Parser {
@@ -90,37 +90,39 @@ class Parser {
                 return ret;
             if (input[0] == ' ' || wrong_ASCIIsign(input[0]))
                 return ret;
-
             // check for double white spaces and other unsuspected signs
-            bool tmp = false;
-            for (size_t i = 1; i < input.size(); ++i) {
-                if ((tmp && (input[i] == ' ')) || wrong_ASCIIsign(input[i])) {
-                    return ret;
+            {
+                bool tmp = false;
+                for (size_t i = 1; i < input.size(); ++i) {
+                    if ((tmp && (input[i] == ' ')) || wrong_ASCIIsign(input[i])) {
+                        return ret;
+                    }
+                    tmp = (input[i] == ' ');
                 }
-                tmp = (input[i] == ' ');
             }
 
             ret._task = get_task(s);
-            if (!(s >> ret._params[0])) {
+            if (!(s >> ret._line_num)) {
+                ret._task = Task::UNRECOGNIZABLE;
                 return ret;
             }
             switch(ret._task) {
                 case Task::MOTH: {
                     auto & vec = ret._params;
                     char sign;
-                    if (!(s >> vec[1] >> sign >> vec[3] >> vec[4])) {
+                    if (!(s >> vec[0] >> sign >> vec[2] >> vec[3])) {
                         ret._task = Task::UNRECOGNIZABLE;
                     }
                     
                     // check basic params correctness
-                    if (!vec[4] || vec[4] > 99)
+                    if (!vec[3] || vec[3] > 99)
                         ret._task = Task::UNRECOGNIZABLE;
-                    if (!(vec[2] = static_cast<size_t>(correct_moth(sign))))
+                    if (!(vec[1] = static_cast<size_t>(correct_moth(sign))))
                         ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }
                 case Task::FEED: {
-                    if (!(s >> ret._params[1]))
+                    if (!(s >> ret._params[0]))
                         ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }
@@ -132,7 +134,8 @@ class Parser {
                 }
             }
             // Nothing can be left in a stream
-            if (!s.eof())
+            char tmp;
+            if (s >> tmp)
                 ret._task = Task::UNRECOGNIZABLE;
             return ret;
         }

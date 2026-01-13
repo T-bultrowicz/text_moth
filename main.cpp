@@ -12,6 +12,7 @@ int main() {
     getline(std::cin, x);
     ParsedInput y = Parser::parse_input(x);
     std::cout << (int)y._task << '\n';
+    std::cout << y._line_num << ' ';
     for (param_t x : y._params) {
         std::cout << x << ' ';
     }
