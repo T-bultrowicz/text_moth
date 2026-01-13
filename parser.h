@@ -124,6 +124,8 @@ class Parser {
                 case Task::FEED: {
                     if (!(s >> ret._params[0]))
                         ret._task = Task::UNRECOGNIZABLE;
+                    if (!ret._params[0])
+                        ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }
                 case Task::TEXT: {
