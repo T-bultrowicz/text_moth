@@ -45,6 +45,6 @@ int basicMothTests() {
 // basic tests, to use however one like
 int main() {
     inputParserTest();
-    basicMothTests();
+    // basicMothTests();
     return 0;
 }

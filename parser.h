@@ -33,6 +33,7 @@ struct ParsedInput {
 
 class Parser {
     private:
+        inline static const int P_PARAM_MAX = 99;
         static Task get_task(std::stringstream & ss) {
             std::string str;
             if (!(ss >> str)) {
@@ -54,11 +55,7 @@ class Parser {
             return Task::UNRECOGNIZABLE;
         }
 
-        static bool wrong_ASCIIsign(char x) {
-            return ((int) x < 32) || ((int) x > 126);
-        }
-
-        static MothType correct_moth(char x) {
+        static MothType get_moth(char x) {
             if (x == '*')
                 return MothType::BASIC;
             else if (x == 'A')
@@ -70,6 +67,47 @@ class Parser {
             return MothType::UNRECOGNIZABLE;
         }
 
+        static bool wrong_ASCIIsign(char x) {
+            return ((int) x < 32) || ((int) x > 126);
+        }
+
+        // Detects every non-standard ASCII sign in user input,
+        // wrong spaces placement & empty string. Returns false if detected.
+        static bool check_correct_form(std::string & s) {
+            if (s.empty())
+                return false;
+            if (s[0] == ' ' || s[s.size() - 1] == ' ' || wrong_ASCIIsign(s[0]))
+                return false;
+            
+            bool tmp = false;
+            for (size_t i = 1; i < s.size(); ++i) {
+                if ((tmp && (s[i] == ' ')) || wrong_ASCIIsign(s[i])) {
+                    return false;
+                }
+                tmp = (s[i] == ' ');
+            }
+            return true;
+        }
+
+        // extract int,char,int,int signature from passed strinstream.
+        static bool extract(std::stringstream & s, std::vector<param_t> & v) {
+            char sign;
+            for (int i = 0; i < 4; ++i) {
+                if (i && s.peek() != ' ')
+                    return false;
+                if (i == 1) {
+                    if (!(s >> sign))
+                        return false;
+                    if (!(v[1] = static_cast<size_t>(get_moth(sign))))
+                        return false;
+                } else {
+                    if (!(s >> v[i]))
+                        return false;
+                }
+            }
+            return true;
+        }
+
     public:
         /* Parses user input given as a string, returning ParsedInput struct. 
          *
@@ -79,41 +117,26 @@ class Parser {
             ParsedInput ret(Task::UNRECOGNIZABLE);
             std::stringstream s(input);
 
-            // check for empty input or white sign begin
-            if (input.empty())
+            // check for empty input or white sign begin / end
+            if (!check_correct_form(input))
                 return ret;
-            if (input[0] == ' ' || wrong_ASCIIsign(input[0]))
-                return ret;
-            // check for double white spaces and other unsuspected signs
-            {
-                bool tmp = false;
-                for (size_t i = 1; i < input.size(); ++i) {
-                    if ((tmp && (input[i] == ' ')) || wrong_ASCIIsign(input[i])) {
-                        return ret;
-                    }
-                    tmp = (input[i] == ' ');
-                }
-            }
 
             ret._task = get_task(s);
-            if (ret._task != Task::TEXT) {
-                if (!(s >> ret._line_num)) {
-                    ret._task = Task::UNRECOGNIZABLE;
-                    return ret;
-                }
-            }
+            if(s.peek() != ' ')
+                ret._task = Task::UNRECOGNIZABLE;
+            if (!(s >> ret._line_num))
+                ret._task = Task::UNRECOGNIZABLE;
+            if(s.peek() != ' ')
+                ret._task = Task::UNRECOGNIZABLE;
+
             switch(ret._task) {
                 case Task::MOTH: {
                     auto & vec = ret._params;
-                    char sign;
-                    if (!(s >> vec[0] >> sign >> vec[2] >> vec[3])) {
+                    if (!extract(s, vec))
                         ret._task = Task::UNRECOGNIZABLE;
-                    }
                     
                     // check basic params correctness
-                    if (!vec[3] || vec[3] > 99 || !vec[2]) // vital & p_param
-                        ret._task = Task::UNRECOGNIZABLE;
-                    if (!(vec[1] = static_cast<size_t>(correct_moth(sign))))
+                    if (!vec[2] || !vec[3] || vec[3] > P_PARAM_MAX)
                         ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }
@@ -130,6 +153,7 @@ class Parser {
                     }
                     break;
                 }
+                default: break;
             }
             // Nothing can be left in a stream
             char tmp;
