@@ -36,10 +36,10 @@ class AbstractMoth {
             size_t move_cost = 10 * dist;
 
             // try to move the moth
-            if (move_cost > _vitality) { // failed
+            if (move_cost > _vitality) { // fail
                 _active = false;
                 _vitality = 0;
-            } else { // succeded
+            } else { // success
                 _pos = (_pos + dist) % s;
                 _vitality -= move_cost;
             }
@@ -50,7 +50,7 @@ class AbstractMoth {
                 if (_vitality + (param_t) text[_pos] > _vitality)
                     _vitality += (param_t) text[_pos];
                 else
-                    _vitality = SIZE_MAX;
+                    _vitality = (param_t) -1;
                 text[_pos] = ' ';
             }
         }
@@ -58,7 +58,7 @@ class AbstractMoth {
         friend std::ostream & operator<<(std:: ostream & os, const AbstractMoth & am);
 };
 
-class BasicMoth : AbstractMoth {
+class BasicMoth : public AbstractMoth {
     private:
         char type() const override { return '*'; }
     public:
@@ -66,7 +66,7 @@ class BasicMoth : AbstractMoth {
           : AbstractMoth(pos, p_param, vitality) {}
 };
 
-class LiteralMoth : AbstractMoth {
+class LiteralMoth : public AbstractMoth {
     private:
         char type() const override { return 'A'; }
         bool can_consume(char x) const override {
@@ -77,7 +77,7 @@ class LiteralMoth : AbstractMoth {
           : AbstractMoth(pos, p_param, vitality) {} 
 };
 
-class NumeralMoth : AbstractMoth {
+class NumeralMoth : public AbstractMoth {
     private:
         char type() const override { return '1'; }
         bool can_consume(char x) const override {
@@ -88,7 +88,7 @@ class NumeralMoth : AbstractMoth {
           : AbstractMoth(pos, p_param, vitality) {} 
 };
 
-class FussyMoth : AbstractMoth {
+class FussyMoth : public AbstractMoth {
     private:
         param_t _curr_move;
         char type() const override { return '!'; }

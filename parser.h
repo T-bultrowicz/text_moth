@@ -96,9 +96,11 @@ class Parser {
             }
 
             ret._task = get_task(s);
-            if (!(s >> ret._line_num)) {
-                ret._task = Task::UNRECOGNIZABLE;
-                return ret;
+            if (ret._task != Task::TEXT) {
+                if (!(s >> ret._line_num)) {
+                    ret._task = Task::UNRECOGNIZABLE;
+                    return ret;
+                }
             }
             switch(ret._task) {
                 case Task::MOTH: {
@@ -109,7 +111,7 @@ class Parser {
                     }
                     
                     // check basic params correctness
-                    if (!vec[3] || vec[3] > 99)
+                    if (!vec[3] || vec[3] > 99 || !vec[2]) // vital & p_param
                         ret._task = Task::UNRECOGNIZABLE;
                     if (!(vec[1] = static_cast<size_t>(correct_moth(sign))))
                         ret._task = Task::UNRECOGNIZABLE;
