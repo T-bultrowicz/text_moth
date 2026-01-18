@@ -5,14 +5,21 @@ import <memory>;
 import moth;
 import parser;
 
+/* This class represents state of a single text with moth swarm on it.
+ * Can react with given tasks by update_state, which can handle 4 types
+ * of tasks:
+ *  1. Spawning new moth.
+ *  2. Printing out text state (3. moths state).
+ *  4. Handle feed cycle moths do on a text.
+ */
 class LocalState {
     private:
         std::string _txt;
         std::vector<std::unique_ptr<AbstractMoth>> _moths;
-        void printt() {
+        void printt() const {
             std::cout << _txt << '\n';
         }
-        void printm() {
+        void printm() const {
             for (const auto & a : _moths) {
                 std::cout << *a << '\n';
             } 
@@ -21,6 +28,9 @@ class LocalState {
     public:
         LocalState() = default;
         LocalState(std::string_view txt): _txt(txt) {}
+
+        // Returns false if task can't be properly realised.
+        // Otherwise handles execution of that task.
         bool update_state(ParsedInput & pi) {
             switch(pi._task) {
                 case Task::FEED:
@@ -38,6 +48,7 @@ class LocalState {
                     if (pi._params[0] >= _txt.size()) {
                         return false;
                     }
+                    // Ugly inside switch to spawn the right kind of moth.
                     switch(pi._params[1]) {
                         case static_cast<size_t>(MothType::BASIC):
                             _moths.push_back(std::make_unique<BasicMoth>(
@@ -65,7 +76,9 @@ class LocalState {
         }
 };
 
-
+/* Class which objects are containers for LocalState colonies.
+ * Shares process_input() method which updates colony based on user input.
+ */
 export class GlobalState {
     private:
         using global_state_t = std::map<size_t, LocalState>;
@@ -92,12 +105,12 @@ export class GlobalState {
                 return false;
             }
 
-            // here we parse the input
+            // parsing input
             ParsedInput pi = Parser::parse_input(input);
             if (pi._task == Task::UNRECOGNIZABLE) {
                 inform_error(); return true;
             }
-            // inserting new text
+            // hadling command - insert new state
             if (pi._task == Task::TEXT) {
                 if (_state.find(pi._line_num) != _state.end()) {
                     inform_error(); return true;
@@ -110,10 +123,10 @@ export class GlobalState {
                     inform_error(); return true;
                 }
 
-                // deleting existing text
+                // handling command - delete LocalState
                 if (pi._task == Task::DELETE)
                     _state.erase(it);
-                // updating local state in some way 
+                // passing handling command to LocalState
                 else if (!it->second.update_state(pi)) {
                     inform_error();
                 }

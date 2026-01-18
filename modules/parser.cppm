@@ -6,7 +6,7 @@ export import <vector>;
 export import lib;
 
 export {
-
+    /* Structures representing formatted task given as input. */
     enum class Task : size_t {
         TEXT = 1,
         MOTH = 2,
@@ -33,10 +33,18 @@ export {
             _params(std::vector<param_t>(PARAMETRES, 0)) {}
     };
 
+    /* Class that is able to create ParsedInput objects, by
+     * the static method parse_input, which parses given string.
+     * ParsedInput contains all necessary info to complete a task, with
+     * ONE STANDING OUT RULE!!!:
+     *      If Task::TEXT, string given as a parameter will be modified, to
+     *      represent text that should be inserted.
+     */
     class Parser {
     private:
         inline static const int P_PARAM_MAX = 99;
         
+        /* Helper to extract correct task */
         static Task get_task(std::stringstream & ss) {
             std::string str;
             if (!(ss >> str)) {
@@ -52,6 +60,7 @@ export {
             return Task::UNRECOGNIZABLE;
         }
 
+        /* Helper to extract correct moth type */
         static MothType get_moth(char x) {
             if (x == '*') return MothType::BASIC;
             else if (x == 'A') return MothType::LITERAL;
@@ -64,6 +73,9 @@ export {
             return ((int) x < 32) || ((int) x > 126);
         }
 
+        /* Helper to assert that string given is in right format for more
+         * advanced parsing.
+         */
         static bool check_correct_form(std::string & s) {
             if (s.empty()) return false;
             if (s[0] == ' ' || s[s.size() - 1] == ' ' || wrong_ASCIIsign(s[0]))
@@ -79,6 +91,10 @@ export {
             return true;
         }
 
+        /* Extracts int, char, int, int from stringstream. Returning false
+         * in case of inproper format. Puts results in param_t form in vector v.
+         * Helper for parsing the Task::MOTH.
+         */
         static bool extract(std::stringstream & s, std::vector<param_t> & v) {
             char sign;
             for (int i = 0; i < 4; ++i) {
@@ -96,6 +112,11 @@ export {
         }
 
     public:
+
+        /* Main parsing input function. If anything is incorrect about the input, 
+         * that can be tested without knowing the queried id of LocalState,
+         * returned ParsedInput will be marked as Task::UNRECOGNIZABLE.
+         */
         static ParsedInput parse_input(std::string & input) {
             ParsedInput ret(Task::UNRECOGNIZABLE);
             std::stringstream s(input);

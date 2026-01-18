@@ -1,6 +1,7 @@
 export module lib;
+// Basic definitions used by modules.
 
-import <cstddef>; // Potrzebne dla size_t
+import <cstddef>;
 
 export {
     using line_num_t = size_t;
