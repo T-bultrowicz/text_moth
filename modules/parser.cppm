@@ -1,9 +1,9 @@
 export module parser;
 
-import <string>;
-import <sstream>;
-import <vector>;
-import lib;
+export import <string>;
+export import <sstream>;
+export import <vector>;
+export import lib;
 
 export {
 
@@ -106,10 +106,10 @@ export {
             ret._task = get_task(s);
             if(s.peek() != ' ') ret._task = Task::UNRECOGNIZABLE;
             if (!(s >> ret._line_num)) ret._task = Task::UNRECOGNIZABLE;
-            if(s.peek() != ' ') ret._task = Task::UNRECOGNIZABLE;
 
             switch(ret._task) {
                 case Task::MOTH: {
+                    if(s.peek() != ' ') ret._task = Task::UNRECOGNIZABLE;
                     auto & vec = ret._params;
                     if (!extract(s, vec)) ret._task = Task::UNRECOGNIZABLE;
                     if (!vec[2] || !vec[3] || vec[3] > P_PARAM_MAX)
@@ -117,11 +117,13 @@ export {
                     break;
                 }
                 case Task::FEED: {
+                    if(s.peek() != ' ') ret._task = Task::UNRECOGNIZABLE;
                     if (!(s >> ret._params[0])) ret._task = Task::UNRECOGNIZABLE;
                     if (!ret._params[0]) ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }
                 case Task::TEXT: {
+                    if(s.peek() != ' ') ret._task = Task::UNRECOGNIZABLE;
                     if(!(s >> input)) ret._task = Task::UNRECOGNIZABLE;
                     break;
                 }

@@ -1,73 +1,92 @@
-CXXFLAGS = -std=c++23 -O2 -Wall -Wextra -Wno-experimental-header-units \
-			-Wno-pragma-system-header-outside-header -Wno-inline-namespace-reopened-noninline
+CXX = clang++
+CXXFLAGS = -std=c++23 -O2 -Wall -Wextra \
+           -Wno-experimental-header-units \
+           -Wno-pragma-system-header-outside-header \
+           -Wno-inline-namespace-reopened-noninline
 
-# Lista wszystkich potrzebnych header-units
-SYSTEM_PCH = cstddef.pch string.pch vector.pch sstream.pch iostream.pch
+# Katalog na pliki pośrednie i wynikowe
+BUILD_DIR = build
+
+# Ścieżka do szukania gotowych modułów
+MOD_PATH = -fprebuilt-module-path=$(BUILD_DIR)
+
+# Lista plików PCH (System Headers)
+PCH_NAMES = cstddef string vector sstream iostream map memory
+SYSTEM_PCH = $(addprefix $(BUILD_DIR)/, $(addsuffix .pch, $(PCH_NAMES)))
+
+# Lista modułów projektu
+MODULE_NAMES = lib parser moth engine
+MODULE_PCM = $(addprefix $(BUILD_DIR)/, $(addsuffix .pcm, $(MODULE_NAMES)))
 
 .PHONY: all clean
 
-all: text_moths
+all: $(BUILD_DIR)/text_moths
 
-# Linkowanie końcowe
-# Zależności: main.cpp oraz wszystkie moduły (.pcm) i headery (.pch)
-text_moths: main.cpp lib.pcm parser.pcm moth.pcm engine.pcm $(SYSTEM_PCH)
-	clang++ $(CXXFLAGS) \
-		-fmodule-file=lib=lib.pcm \
-		-fmodule-file=parser=parser.pcm \
-		-fmodule-file=moth=moth.pcm \
-		-fmodule-file=engine=engine.pcm \
-		-fmodule-file=iostream.pch \
-		-fmodule-file=string.pch \
-		-fmodule-file=vector.pch \
-		-fmodule-file=sstream.pch \
-		main.cpp lib.pcm parser.pcm moth.pcm engine.pcm -o text_moths
+# --- Reguła tworzenia katalogu build ---
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# --- Reguły dla Header Units (budowane tylko raz!) ---
+# --- Reguła ogólna dla System Headers (.pch) ---
+# Tworzy np. build/vector.pch z vector
+$(BUILD_DIR)/%.pch: | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -xc++-system-header --precompile $* -o $@
 
-cstddef.pch:
-	clang++ $(CXXFLAGS) -xc++-system-header --precompile cstddef -o cstddef.pch
+# --- Linkowanie końcowe ---
+$(BUILD_DIR)/text_moths: main.cpp $(MODULE_PCM) $(SYSTEM_PCH) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(MOD_PATH) \
+		-fmodule-file=$(BUILD_DIR)/iostream.pch \
+		-fmodule-file=$(BUILD_DIR)/string.pch \
+		-fmodule-file=$(BUILD_DIR)/vector.pch \
+		-fmodule-file=$(BUILD_DIR)/sstream.pch \
+		-fmodule-file=$(BUILD_DIR)/map.pch \
+		-fmodule-file=$(BUILD_DIR)/memory.pch \
+		-fmodule-file=$(BUILD_DIR)/cstddef.pch \
+		main.cpp \
+		$(BUILD_DIR)/lib.pcm \
+		$(BUILD_DIR)/parser.pcm \
+		$(BUILD_DIR)/moth.pcm \
+		$(BUILD_DIR)/engine.pcm \
+		-o text_moths
 
-string.pch:
-	clang++ $(CXXFLAGS) -xc++-system-header --precompile string -o string.pch
+# --- Moduły Projektu ---
 
-vector.pch:
-	clang++ $(CXXFLAGS) -xc++-system-header --precompile vector -o vector.pch
+# lib.pcm
+$(BUILD_DIR)/lib.pcm: lib.cppm $(BUILD_DIR)/cstddef.pch | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(MOD_PATH) \
+		-fmodule-file=$(BUILD_DIR)/cstddef.pch \
+		--precompile lib.cppm -o $@
 
-sstream.pch:
-	clang++ $(CXXFLAGS) -xc++-system-header --precompile sstream -o sstream.pch
+# parser.pcm
+$(BUILD_DIR)/parser.pcm: parser.cppm $(BUILD_DIR)/lib.pcm \
+                        $(BUILD_DIR)/string.pch $(BUILD_DIR)/vector.pch $(BUILD_DIR)/sstream.pch | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(MOD_PATH) \
+		-fmodule-file=$(BUILD_DIR)/string.pch \
+		-fmodule-file=$(BUILD_DIR)/sstream.pch \
+		-fmodule-file=$(BUILD_DIR)/vector.pch \
+		-fprebuilt-module-path=. \
+		--precompile parser.cppm -o $@
 
-iostream.pch:
-	clang++ $(CXXFLAGS) -xc++-system-header --precompile iostream -o iostream.pch
+# moth.pcm
+$(BUILD_DIR)/moth.pcm: moth.cppm $(BUILD_DIR)/lib.pcm \
+                       $(BUILD_DIR)/string.pch $(BUILD_DIR)/iostream.pch | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(MOD_PATH) \
+		-fmodule-file=$(BUILD_DIR)/string.pch \
+		-fmodule-file=$(BUILD_DIR)/iostream.pch \
+		-fprebuilt-module-path=. \
+		--precompile moth.cppm -o $@
 
-# --- Reguły dla Modułów ---
-
-lib.pcm: lib.cppm cstddef.pch
-	clang++ $(CXXFLAGS) -fmodule-file=cstddef.pch --precompile lib.cppm -o lib.pcm
-
-parser.pcm: parser.cppm lib.pcm string.pch vector.pch sstream.pch
-	clang++ $(CXXFLAGS) \
-		-fmodule-file=string.pch \
-		-fmodule-file=sstream.pch \
-		-fmodule-file=vector.pch \
-		-fmodule-file=lib=lib.pcm \
-		--precompile parser.cppm -o parser.pcm
-
-moth.pcm: moth.cppm lib.pcm string.pch iostream.pch
-	clang++ $(CXXFLAGS) \
-		-fmodule-file=string.pch \
-		-fmodule-file=iostream.pch \
-		-fmodule-file=lib=lib.pcm \
-		--precompile moth.cppm -o moth.pcm
-
-# # Engine (dodaj tutaj zależności engine'a)
-# engine.pcm: engine.cppm lib.pcm parser.pcm moth.pcm iostream.pch string.pch
-# 	clang++ $(CXXFLAGS) \
-# 		-fmodule-file=lib.pcm \
-# 		-fmodule-file=parser=parser.pcm \
-# 		-fmodule-file=moth=moth.pcm \
-# 		-fmodule-file=iostream.pch \
-# 		-fmodule-file=string.pch \
-# 		--precompile engine.cppm -o engine.pcm
+# engine.pcm
+$(BUILD_DIR)/engine.pcm: engine.cppm $(BUILD_DIR)/lib.pcm $(BUILD_DIR)/parser.pcm $(BUILD_DIR)/moth.pcm \
+                         $(BUILD_DIR)/map.pch $(BUILD_DIR)/memory.pch $(BUILD_DIR)/vector.pch \
+                         $(BUILD_DIR)/string.pch $(BUILD_DIR)/iostream.pch | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(MOD_PATH) \
+		-fmodule-file=$(BUILD_DIR)/map.pch \
+		-fmodule-file=$(BUILD_DIR)/memory.pch \
+		-fmodule-file=$(BUILD_DIR)/vector.pch \
+		-fmodule-file=$(BUILD_DIR)/string.pch \
+		-fmodule-file=$(BUILD_DIR)/iostream.pch \
+		-fprebuilt-module-path=. \
+		--precompile engine.cppm -o $@
 
 clean:
-	rm -f text_moths *.pcm *.pch
+	rm -rf $(BUILD_DIR)

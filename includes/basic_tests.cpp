@@ -27,7 +27,7 @@ int basicMothTests() {
     moths.push_back(std::make_unique<LiteralMoth>(0, 4, 100));
     moths.push_back(std::make_unique<NumeralMoth>(0, 4, 100));
     moths.push_back(std::make_unique<BasicMoth>(0, 4, 100));
-    moths.push_back(std::make_unique<FussyMoth>(0, 4, 100));
+    moths.push_back(std::make_unique<FussyMoth>(0, 4, 1));
 
     for (const auto & a : moths)
         std::cout << *a << '\n';

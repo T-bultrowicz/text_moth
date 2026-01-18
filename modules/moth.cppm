@@ -1,7 +1,7 @@
 export module moth;
 
-import <string>;
-import <iostream>;
+export import <string>;
+export import <iostream>;
 import lib;
 
 export {
@@ -36,14 +36,15 @@ export {
             } else {
                 _pos = (_pos + dist) % s;
                 _vitality -= move_cost;
-            }
-
-            if (can_consume(text[_pos])) {
-                if (_vitality + (param_t) text[_pos] > _vitality)
-                    _vitality += (param_t) text[_pos];
-                else
-                    _vitality = (param_t) -1;
-                text[_pos] = ' ';
+                if (can_consume(text[_pos])) {
+                    if (_vitality + (param_t) text[_pos] > _vitality)
+                        _vitality += (param_t) text[_pos];
+                    else
+                        _vitality = (param_t) -1;
+                    text[_pos] = ' ';
+                } else if (text[_pos] == ' ') {
+                    _vitality = _vitality > 32 ? _vitality - 32 : 0;
+                }
             }
         }
 
