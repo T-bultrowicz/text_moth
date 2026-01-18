@@ -1,2 +1,6 @@
 .vscode
 *.txt
+*.in
+*.out
+*.pch
+*.pcm
