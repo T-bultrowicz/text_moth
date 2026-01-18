@@ -44,31 +44,34 @@ class LocalState {
                     printt(); break;
                 case Task::PRINTM:
                     printm(); break;
-                case Task::MOTH:
+                case Task::MOTH: {
+                    // Check if possible to spawn at that position
                     if (pi._params[0] >= _txt.size()) {
                         return false;
                     }
-                    // Ugly inside switch to spawn the right kind of moth.
-                    switch(pi._params[1]) {
-                        case static_cast<size_t>(MothType::BASIC):
+                    // Inside switch to spawn the right kind of moth
+                    MothType moth = static_cast<MothType>(pi._params[1]);
+                    switch(moth) {
+                        case MothType::BASIC:
                             _moths.push_back(std::make_unique<BasicMoth>(
                                 pi._params[0], pi._params[3], pi._params[2]));
                                 break;
-                        case static_cast<size_t>(MothType::LITERAL):
+                        case MothType::LITERAL:
                             _moths.push_back(std::make_unique<LiteralMoth>(
                                 pi._params[0], pi._params[3], pi._params[2]));
                                 break;
-                        case static_cast<size_t>(MothType::NUMERAL):
+                        case MothType::NUMERAL:
                             _moths.push_back(std::make_unique<NumeralMoth>(
                                 pi._params[0], pi._params[3], pi._params[2]));
                                 break;
-                        case static_cast<size_t>(MothType::FUSSY):
+                        case MothType::FUSSY:
                             _moths.push_back(std::make_unique<FussyMoth>(
                                 pi._params[0], pi._params[3], pi._params[2]));
                                 break;
                         default: break;
                     }
                     break;
+                }
                 default:
                     return false;
             }
